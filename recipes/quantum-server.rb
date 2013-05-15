@@ -31,8 +31,13 @@ end
 
 node.set_unless['quantum']['service_pass'] = secure_password
 
-package "quantum-server" do
-    action :install
+(platform_options["quantum_packages"]
++ platform_options["mysql_python_packages"]
++ ['quantum-server']).each do |pkg|
+    package pkg do
+        action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
+        options platform_options["package_overrides"]
+    end
 end
 
 ks_admin_endpoint = get_access_endpoint("keystone-api", "keystone", "admin-api")
@@ -47,18 +52,6 @@ node["quantum"]["db"]["name"],
 node["quantum"]["db"]["username"],
 node["quantum"]["db"]["password"])
 
-platform_options["mysql_python_packages"].each do |pkg|
-    package pkg do
-        action :install
-    end
-end
-
-platform_options["quantum_packages"].each do |pkg|
-    package pkg do
-        action :install
-        options platform_options["package_overrides"]
-    end
-end
 
 service "quantum-server" do
     service_name platform_options["quantum_api_service"]
